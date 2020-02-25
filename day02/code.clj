@@ -48,23 +48,15 @@
 (defn p1 []
   (run-intcodes-with-adjustment 12 2))
 
-(defn p2 []
+(defn search-for-intcode-params [target-result]
   (loop [x 0
          y 0]
-    (prn (str x " " y))
     (let [res (run-intcodes-with-adjustment x y)]
-      (if (= res 19690720)
+      (if (= res target-result)
         (+ (* 100 x) y)
         (let [new-y (if (= 99 x) (inc y) y)
               new-x (if (= 99 x) 0 (inc x))]
           (recur new-x new-y))))))
 
-
-(def demo-codes [1,9,10,3
-                 2,3,11,0
-                 99
-                 30,40,50])
-
-
-
-(run-intcodes demo-codes)
+(defn p2 []
+  (search-for-intcode-params 19690720))
