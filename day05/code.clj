@@ -1,8 +1,6 @@
 (ns user
   (:require [clojure.edn :as edn]))
 
-(def file "demo0.txt")
-
 (defn get-int-codes [file]
   (->> file
        slurp
@@ -19,7 +17,7 @@
 (defn three-arg-op [f int-codes args]
   (let [map (map (fn [a] (get-args int-codes (:pos a) (:mode a))) args)
         params (take 2 map)
-        loc (get int-codes (:pos (nth args 2)))]
+        loc (get-args int-codes (:pos (nth args 2)) 1)]
     (assoc int-codes loc (apply f params))))
 
 (def add
@@ -28,14 +26,15 @@
 (def multiply
   (partial three-arg-op *))
 
-(defn input [int-codes pos]
-  (let [loc (get int-codes (inc pos))
-        new-value (edn/read-string (read-line))]
-    (assoc int-codes loc new-value)))
+; master 1 arg version?
+(defn input [int-codes args]
+  (let [loc (get-args int-codes (:pos (first args)) 1)]
+    (assoc int-codes loc (edn/read-string (read-line)))))
 
-(defn output [int-codes pos]
-  (prn (get int-codes (get int-codes (inc pos))))
-  int-codes)
+(defn output [int-codes args]
+  (let [loc (get-args int-codes (:pos (first args)) 1)]
+    (prn (get int-codes loc))
+    int-codes))
 
 (defn build-op-args [int-codes pos arg-count]
   (let [op (get int-codes pos)]
@@ -49,8 +48,8 @@
     (condp = op
       1 {:op add :next-pos (+ pos 4) :args (build-op-args int-codes pos 3)}
       2 {:op multiply :next-pos (+ pos 4) :args (build-op-args int-codes pos 3)}
-      3 {:op input :next-pos (+ pos 2)}
-      4 {:op output :next-pos (+ pos 2)}
+      3 {:op input :next-pos (+ pos 2) :args (build-op-args int-codes pos 1)} ; TODO args
+      4 {:op output :next-pos (+ pos 2) :args (build-op-args int-codes pos 1)} ; TODO args
       99 {:halts true}
       :else {:halts true :error (str "unknown code " op)})))
 
@@ -66,8 +65,25 @@
 
 ;; testing
 
+(def input-file (get-int-codes "./input.txt"))
 
+(run-int-codes input-file)
 
+(def demo0 [3,0,4,0,99])
+(input demo0 0)
+(run-int-codes demo0)
+
+(def demo1 [1002,4,3,4,33])
+(run-int-codes demo1)
+
+(def demo2 [1101,100,-1,4,0])
+(run-int-codes demo2)
+
+(def arg (build-op-args demo0 0 1))
+
+(output demo0 arg)
+
+(get-args demo0 0 1)
 
 ;; 4138658 (input-02.txt)
 ;; 
