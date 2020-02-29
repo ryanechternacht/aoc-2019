@@ -18,7 +18,7 @@
   (let [map (map (fn [a] (get-arg int-codes (:pos a) (:mode a))) args)
         params (take 2 map)
         loc (get-arg int-codes (:pos (nth args 2)) 1)]
-    (assoc int-codes loc (apply f params))))
+    {:int-codes (assoc int-codes loc (apply f params))}))
 
 (def add
   (partial three-arg-op +))
@@ -35,12 +35,12 @@
 ; master 1 arg version?
 (defn input [int-codes args]
   (let [loc (get-arg int-codes (:pos (first args)) 1)]
-    (assoc int-codes loc (edn/read-string (read-line)))))
+    {:int-codes (assoc int-codes loc (edn/read-string (read-line)))}))
 
 (defn output [int-codes args]
   (let [loc (get-arg int-codes (:pos (first args)) 1)]
     (prn (get int-codes loc))
-    int-codes))
+    {:int-codes int-codes}))
 
 (defn build-op-args [int-codes pos arg-count]
   (let [op (get int-codes pos)]
@@ -67,9 +67,10 @@
     (let [op (build-op int-codes pos)]
       (cond
         (:halts op) int-codes
-        (:op op) (recur
-                  (apply (:op op) [int-codes (:args op)])
-                  (:next-pos op))))))
+        (:op op) (let [new-codes  (apply (:op op) [int-codes (:args op)])]
+                   (recur
+                    (:int-codes new-codes)
+                    (:next-pos op)))))))
 
 ;; testing
 
