@@ -8,16 +8,16 @@
        (map edn/read-string)
        (vec)))
 
-(defn get-args [int-codes pos mode]
+(defn get-arg [int-codes pos mode]
   (condp = mode
     0 (get int-codes (get int-codes pos))
     1 (get int-codes pos)
     :else "error"))
 
 (defn three-arg-op [f int-codes args]
-  (let [map (map (fn [a] (get-args int-codes (:pos a) (:mode a))) args)
+  (let [map (map (fn [a] (get-arg int-codes (:pos a) (:mode a))) args)
         params (take 2 map)
-        loc (get-args int-codes (:pos (nth args 2)) 1)]
+        loc (get-arg int-codes (:pos (nth args 2)) 1)]
     (assoc int-codes loc (apply f params))))
 
 (def add
@@ -26,13 +26,19 @@
 (def multiply
   (partial three-arg-op *))
 
+(def equals
+  (partial three-arg-op #(if (= %1 %2) 1 0)))
+
+(def less-than
+  (partial three-arg-op #(if (< %1 %2) 1 0)))
+
 ; master 1 arg version?
 (defn input [int-codes args]
-  (let [loc (get-args int-codes (:pos (first args)) 1)]
+  (let [loc (get-arg int-codes (:pos (first args)) 1)]
     (assoc int-codes loc (edn/read-string (read-line)))))
 
 (defn output [int-codes args]
-  (let [loc (get-args int-codes (:pos (first args)) 1)]
+  (let [loc (get-arg int-codes (:pos (first args)) 1)]
     (prn (get int-codes loc))
     int-codes))
 
@@ -48,8 +54,10 @@
     (condp = op
       1 {:op add :next-pos (+ pos 4) :args (build-op-args int-codes pos 3)}
       2 {:op multiply :next-pos (+ pos 4) :args (build-op-args int-codes pos 3)}
-      3 {:op input :next-pos (+ pos 2) :args (build-op-args int-codes pos 1)} ; TODO args
-      4 {:op output :next-pos (+ pos 2) :args (build-op-args int-codes pos 1)} ; TODO args
+      3 {:op input :next-pos (+ pos 2) :args (build-op-args int-codes pos 1)}
+      4 {:op output :next-pos (+ pos 2) :args (build-op-args int-codes pos 1)}
+      7 {:op less-than :next-pos (+ pos 4) :args (build-op-args int-codes pos 3)}
+      8 {:op equals :next-pos (+ pos 4) :args (build-op-args int-codes pos 3)}
       99 {:halts true}
       :else {:halts true :error (str "unknown code " op)})))
 
@@ -79,11 +87,23 @@
 (def demo2 [1101,100,-1,4,0])
 (run-int-codes demo2)
 
-(def arg (build-op-args demo0 0 1))
+(def demo3 [3,9,8,9,10,9,4,9,99,-1,8])
+(run-int-codes demo3)
+
+(def demo4 [3,9,7,9,10,9,4,9,99,-1,8])
+(run-int-codes demo4)
+
+(def demo5 [3,3,1108,-1,8,3,4,3,99])
+(run-int-codes demo5)
+
+(def demo6 [3,3,1107,-1,8,3,4,3,99])
+(run-int-codes demo6)
+
+(def args (build-op-args demo0 0 1))
 
 (output demo0 arg)
 
-(get-args demo0 0 1)
+(get-arg demo0 0 1)
 
 ;; 4138658 (input-02.txt)
 ;; 
