@@ -14,8 +14,9 @@
     1 (get int-codes pos)
     :else "error"))
 
-(defn three-arg-op [f int-codes args]
-  (let [map (map (fn [a] (get-arg int-codes (:pos a) (:mode a))) args)
+(defn three-arg-op [f int-codes op]
+  (let [args (:args op)
+        map (map (fn [a] (get-arg int-codes (:pos a) (:mode a))) args)
         params (take 2 map)
         loc (get-arg int-codes (:pos (nth args 2)) 1)]
     {:int-codes (assoc int-codes loc (apply f params))}))
@@ -33,12 +34,12 @@
   (partial three-arg-op #(if (< %1 %2) 1 0)))
 
 ; master 1 arg version?
-(defn input [int-codes args]
-  (let [loc (get-arg int-codes (:pos (first args)) 1)]
+(defn input [int-codes op]
+  (let [loc (get-arg int-codes (:pos (first (:args op))) 1)]
     {:int-codes (assoc int-codes loc (edn/read-string (read-line)))}))
 
-(defn output [int-codes args]
-  (let [loc (get-arg int-codes (:pos (first args)) 1)]
+(defn output [int-codes op]
+  (let [loc (get-arg int-codes (:pos (first (:args op))) 1)]
     (prn (get int-codes loc))
     {:int-codes int-codes}))
 
@@ -67,7 +68,7 @@
     (let [op (build-op int-codes pos)]
       (cond
         (:halts op) int-codes
-        (:op op) (let [new-codes  (apply (:op op) [int-codes (:args op)])]
+        (:op op) (let [new-codes  (apply (:op op) [int-codes op])]
                    (recur
                     (:int-codes new-codes)
                     (:next-pos op)))))))
@@ -87,15 +88,18 @@
 
 (def demo2 [1101,100,-1,4,0])
 (run-int-codes demo2)
+(build-op-args demo2 0 3)
 
 (def demo3 [3,9,8,9,10,9,4,9,99,-1,8])
 (run-int-codes demo3)
+(build-op-args demo3 0 1)
 
 (def demo4 [3,9,7,9,10,9,4,9,99,-1,8])
 (run-int-codes demo4)
 
 (def demo5 [3,3,1108,-1,8,3,4,3,99])
 (run-int-codes demo5)
+(build-op-args demo5 2 3)
 
 (def demo6 [3,3,1107,-1,8,3,4,3,99])
 (run-int-codes demo6)
