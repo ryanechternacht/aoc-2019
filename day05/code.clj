@@ -19,7 +19,8 @@
         map (map (fn [a] (get-arg int-codes (:pos a) (:mode a))) args)
         params (take 2 map)
         loc (get-arg int-codes (:pos (nth args 2)) 1)]
-    {:int-codes (assoc int-codes loc (apply f params))}))
+    {:int-codes (assoc int-codes loc (apply f params))
+     :next-pos (+ (:pos op) 4)}))
 
 (def add
   (partial three-arg-op +))
@@ -36,12 +37,13 @@
 ; master 1 arg version?
 (defn input [int-codes op]
   (let [loc (get-arg int-codes (:pos (first (:args op))) 1)]
-    {:int-codes (assoc int-codes loc (edn/read-string (read-line)))}))
+    {:int-codes (assoc int-codes loc (edn/read-string (read-line)))
+     :next-pos (+ (:pos op) 2)}))
 
 (defn output [int-codes op]
   (let [loc (get-arg int-codes (:pos (first (:args op))) 1)]
     (prn (get int-codes loc))
-    {:int-codes int-codes}))
+    {:int-codes int-codes :next-pos (+ (:pos op) 2)}))
 
 (defn build-op-args [int-codes pos arg-count]
   (let [op (get int-codes pos)]
@@ -50,15 +52,18 @@
          (map (fn [x] {:pos (inc (+ x pos)) :power (reduce * (repeat (+ 2 x) 10))}))
          (map (fn [m] (assoc m :mode (mod (int (/ op (:power m))) 10)))))))
 
+(defn build-op-helper [int-codes pos f arg-count]
+  {:op f :pos pos :args (build-op-args int-codes pos arg-count)})
+
 (defn build-op [int-codes pos]
   (let [op (mod (get int-codes pos) 100)]
     (condp = op
-      1 {:op add :next-pos (+ pos 4) :args (build-op-args int-codes pos 3)}
-      2 {:op multiply :next-pos (+ pos 4) :args (build-op-args int-codes pos 3)}
-      3 {:op input :next-pos (+ pos 2) :args (build-op-args int-codes pos 1)}
-      4 {:op output :next-pos (+ pos 2) :args (build-op-args int-codes pos 1)}
-      7 {:op less-than :next-pos (+ pos 4) :args (build-op-args int-codes pos 3)}
-      8 {:op equals :next-pos (+ pos 4) :args (build-op-args int-codes pos 3)}
+      1 (build-op-helper int-codes pos add 3)
+      2 (build-op-helper int-codes pos multiply 3)
+      3 (build-op-helper int-codes pos input 1)
+      4 (build-op-helper int-codes pos output 1)
+      7 (build-op-helper int-codes pos less-than 3)
+      8 (build-op-helper int-codes pos equals 3)
       99 {:halts true}
       :else {:halts true :error (str "unknown code " op)})))
 
@@ -68,10 +73,10 @@
     (let [op (build-op int-codes pos)]
       (cond
         (:halts op) int-codes
-        (:op op) (let [new-codes  (apply (:op op) [int-codes op])]
+        (:op op) (let [result (apply (:op op) [int-codes op])]
                    (recur
-                    (:int-codes new-codes)
-                    (:next-pos op)))))))
+                    (:int-codes result)
+                    (:next-pos result)))))))
 
 ;; testing
 
