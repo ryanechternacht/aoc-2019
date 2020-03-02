@@ -41,9 +41,23 @@
      :next-pos (+ (:pos op) 2)}))
 
 (defn output [int-codes op]
-  (let [loc (get-arg int-codes (:pos (first (:args op))) 1)]
-    (prn (get int-codes loc))
+  (let [arg (first (:args op))
+        val (get-arg int-codes (:pos arg) (:mode arg))]
+    (prn val)
     {:int-codes int-codes :next-pos (+ (:pos op) 2)}))
+
+(defn jump-template [f int-codes op]
+  (let [args (map (fn [a] (get-arg int-codes (:pos a) (:mode a))) (:args op))
+        test-arg (first args)
+        next-pos-arg (second args)
+        next-pos (if (f test-arg) next-pos-arg (+ (:pos op) 3))]
+    {:int-codes int-codes :next-pos next-pos}))
+
+(def jump-if-false
+  (partial jump-template #(= 0 %)))
+
+(def jump-if-true
+  (partial jump-template #(not (= 0 %))))
 
 (defn build-op-args [int-codes pos arg-count]
   (let [op (get int-codes pos)]
@@ -62,6 +76,8 @@
       2 (build-op-helper int-codes pos multiply 3)
       3 (build-op-helper int-codes pos input 1)
       4 (build-op-helper int-codes pos output 1)
+      5 (build-op-helper int-codes pos jump-if-true 2)
+      6 (build-op-helper int-codes pos jump-if-false 2)
       7 (build-op-helper int-codes pos less-than 3)
       8 (build-op-helper int-codes pos equals 3)
       99 {:halts true}
@@ -108,6 +124,19 @@
 
 (def demo6 [3,3,1107,-1,8,3,4,3,99])
 (run-int-codes demo6)
+
+(def demo7 [3,12,6,12,15,1,13,14,13,4,13,99,-1,0,1,9])
+(run-int-codes demo7)
+(def op (build-op demo7 2))
+(jump-if-true demo7 op)
+
+(def demo8 [3,3,1105,-1,9,1101,0,0,12,4,12,99,1])
+(run-int-codes demo8)
+
+(def demo9 [3,21,1008,21,8,20,1005,20,22,107,8,21,20,1006,20,31
+            1106,0,36,98,0,0,1002,21,125,20,4,20,1105,1,46,104
+            999,1105,1,46,1101,1000,1,20,4,20,1105,1,46,98,99])
+(run-int-codes demo9)
 
 (def args (build-op-args demo0 0 1))
 
