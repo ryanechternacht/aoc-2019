@@ -22,7 +22,7 @@
       :else (assoc tree root (reduce conj (map #(add-connection {(first %) (second %)} connection) children))))))
 
 (defn build-tree [connections]
-  (loop [tree {"COM" {}}
+  (loop [tree {"21X" {}}
          [first & rest] connections]
     (if (nil? first)
       tree
@@ -49,6 +49,9 @@
 (def demo "./day06/demo.txt")
 (def demo-connections (get-connections demo))
 (def tree (build-tree demo-connections))
+(def input "./day06/input.txt")
+(def input-connections (get-connections input))
+(def input-tree (build-tree input-connections))
 
 (def demo-tree {"COM" {"A" {}}})
 (add-connection demo-tree {:from "A" :to "B"})
